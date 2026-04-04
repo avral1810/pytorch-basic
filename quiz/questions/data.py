@@ -4,6 +4,7 @@ from copy import deepcopy
 from pathlib import Path
 
 from quiz.content.data import get_chapter
+from quiz.questions.answer_keys import ANSWER_CODES
 from quiz.questions.models import QuestionAnswer, QuestionTemplate, QuestionTests, QuestionText, Quiz, QuizQuestion
 
 ROOT_DIR = Path(__file__).resolve().parents[2]
@@ -333,6 +334,7 @@ def public_question_payload(question_ids: list[str]) -> list[dict[str, object]]:
     for question_id in question_ids:
         item = QUESTIONS_BY_ID[question_id]
         payload.append(deepcopy(item.to_public_payload()))
+        payload[-1]["answer_code"] = ANSWER_CODES.get(question_id, "")
     return payload
 
 

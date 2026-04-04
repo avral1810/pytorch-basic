@@ -179,6 +179,9 @@
           </section>
 
           <section class="results-panel">
+            <div class="results-tab-row">
+              <button id="answer-tab" class="result-tab-button is-hidden" type="button" data-action="show-answer">Answer</button>
+            </div>
             <div class="results-grid">
               {% for panel in chapter.ui.result_panels %}
               <div class="result-card">
@@ -190,6 +193,10 @@
                 {% endif %}
               </div>
               {% endfor %}
+              <div id="answer-card" class="result-card is-hidden">
+                <h3>Official Answer</h3>
+                <pre id="answer-output" class="result-output"></pre>
+              </div>
             </div>
           </section>
         </section>

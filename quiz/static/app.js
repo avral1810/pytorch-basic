@@ -25,12 +25,14 @@ function getChapterProgress(chapterId, questionCount = 0) {
   const progress = store[chapterId] || {};
   const completedQuestions = Array.isArray(progress.completed_questions) ? progress.completed_questions : [];
   const answers = progress.answers && typeof progress.answers === "object" ? progress.answers : {};
+  const hintCounts = progress.hint_counts && typeof progress.hint_counts === "object" ? progress.hint_counts : {};
   const currentQuestionIndex = Number.isInteger(progress.current_question_index) ? progress.current_question_index : 0;
   const completed = Boolean(progress.completed) || (questionCount > 0 && completedQuestions.length >= questionCount);
   return {
     completed,
     completed_questions: completedQuestions,
     answers,
+    hint_counts: hintCounts,
     current_question_index: currentQuestionIndex,
   };
 }
@@ -43,6 +45,7 @@ function updateChapterProgress(chapterId, updater, questionCount = 0) {
     completed: Boolean(next.completed),
     completed_questions: Array.from(new Set(next.completed_questions || [])),
     answers: next.answers || {},
+    hint_counts: next.hint_counts || {},
     current_question_index: Number.isInteger(next.current_question_index) ? next.current_question_index : 0,
   };
   saveProgressStore(store);
@@ -136,6 +139,65 @@ function questionStateFor(question, progress, index) {
 
 function syncInlineNextVisibility() {
   showInlineNext();
+}
+
+function currentHintCount() {
+  const chapter = window.__CHAPTER_DATA__;
+  const question = currentQuestion();
+  if (!chapter || !question) {
+    return 0;
+  }
+  const progress = getChapterProgress(chapter.id, questions.length);
+  return Number(progress.hint_counts[question.id] || 0);
+}
+
+function isAnswerUnlocked(question) {
+  return Boolean(question && question.answer_code && currentHintCount() >= 3);
+}
+
+function syncAnswerTab() {
+  const tab = document.getElementById("answer-tab");
+  const card = document.getElementById("answer-card");
+  const output = document.getElementById("answer-output");
+  const question = currentQuestion();
+  if (!tab || !card || !output) {
+    return;
+  }
+
+  card.classList.add("is-hidden");
+  output.textContent = "";
+
+  if (isAnswerUnlocked(question)) {
+    tab.classList.remove("is-hidden");
+  } else {
+    tab.classList.add("is-hidden");
+  }
+}
+
+function revealAnswer() {
+  const question = currentQuestion();
+  const card = document.getElementById("answer-card");
+  const output = document.getElementById("answer-output");
+  if (!card || !output || !isAnswerUnlocked(question)) {
+    return;
+  }
+  output.textContent = question.answer_code || "No official answer is available for this question.";
+  card.classList.remove("is-hidden");
+}
+
+function recordHintUsage() {
+  const chapter = window.__CHAPTER_DATA__;
+  const question = currentQuestion();
+  if (!chapter || !question) {
+    return;
+  }
+  updateChapterProgress(chapter.id, (progress) => ({
+    ...progress,
+    hint_counts: {
+      ...progress.hint_counts,
+      [question.id]: Number(progress.hint_counts[question.id] || 0) + 1,
+    },
+  }), questions.length);
 }
 
 function refreshQuestionTrackerUi() {
@@ -448,6 +510,8 @@ function applyGlobalHint() {
   }
 
   detailShells.forEach((detail) => applyHint(detail.dataset.resultDetail));
+  recordHintUsage();
+  syncAnswerTab();
 }
 
 function toggleEditorComment() {
@@ -562,6 +626,7 @@ function renderCurrentQuestion(resetCode = false) {
   lastRunPassed = false;
   lastRunQuestionId = question.id;
   syncInlineNextVisibility();
+  syncAnswerTab();
   updateNavigationState();
   persistCurrentQuestionIndex();
 }
@@ -683,6 +748,7 @@ function bindQuizUi() {
     "open-tutorial-drawer": openTutorialDrawer,
     "open-pdf-drawer": (event) => openPdfDrawer(event.currentTarget.dataset.pdfUrl),
     "run-playground": runPlayground,
+    "show-answer": revealAnswer,
     "reset-playground": () => {
       if (!playgroundEditor) {
         return;
