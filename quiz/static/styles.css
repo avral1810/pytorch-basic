@@ -56,6 +56,13 @@ body { margin: 0; font-family: "Iowan Old Style", "Palatino Linotype", serif; ba
 .lesson-panel, .quiz-panel { padding: 22px; }
 .lesson-top, .quiz-header { display: flex; justify-content: space-between; gap: 18px; align-items: flex-start; }
 .question-progress { margin: 6px 0 4px; color: var(--muted); font-weight: 700; font-size: 0.95rem; }
+.question-tracker { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 10px; margin-top: 16px; }
+.question-tracker-item { display: flex; flex-direction: column; gap: 4px; text-align: left; padding: 10px 12px; border-radius: 14px; border: 1px solid var(--line); background: #fcf8ef; color: var(--ink); cursor: pointer; }
+.question-tracker-item.is-current { border-color: rgba(19, 77, 102, 0.35); background: rgba(19, 77, 102, 0.08); }
+.question-tracker-item.is-completed { border-color: rgba(11, 110, 79, 0.28); background: rgba(11, 110, 79, 0.1); }
+.question-tracker-item.is-draft { border-color: rgba(138, 113, 66, 0.35); background: rgba(210, 192, 138, 0.16); }
+.question-tracker-number { font-weight: 700; font-size: 0.9rem; }
+.question-tracker-state { font-size: 0.8rem; color: var(--muted); }
 .resource-links { display: flex; gap: 12px; flex-wrap: wrap; }
 .resource-button { background: transparent; border: 1px solid var(--line); color: var(--accent); padding: 10px 14px; border-radius: 999px; font-weight: 700; cursor: pointer; }
 .resource-link { display: inline-block; border: 1px solid var(--line); color: var(--accent); padding: 10px 14px; border-radius: 999px; font-weight: 700; text-decoration: none; }

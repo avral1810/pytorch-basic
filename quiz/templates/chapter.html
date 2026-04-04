@@ -134,6 +134,19 @@
           </div>
 
           <p id="question-prompt" class="question-prompt">{{ first_question.prompt if first_question else "" }}</p>
+          <div id="question-tracker" class="question-tracker">
+            {% for question in chapter.questions %}
+            <button
+              class="question-tracker-item{% if loop.first %} is-current{% endif %}"
+              type="button"
+              data-question-jump="{{ loop.index0 }}"
+              data-question-id="{{ question.id }}"
+            >
+              <span class="question-tracker-number">Q{{ loop.index }}</span>
+              <span class="question-tracker-state">Not started</span>
+            </button>
+            {% endfor %}
+          </div>
           <div class="example-box">
             <h3 id="visible-examples-title">{{ first_question.visible_examples_title if first_question else chapter.ui.question_prompt_title }}</h3>
             <ul id="visible-examples">

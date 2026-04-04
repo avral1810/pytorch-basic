@@ -116,6 +116,44 @@ function refreshSidebarProgressUi() {
 function refreshSavedProgressUi() {
   refreshHomeProgressUi();
   refreshSidebarProgressUi();
+  refreshQuestionTrackerUi();
+}
+
+function questionStateFor(question, progress, index) {
+  const completed = (progress.completed_questions || []).includes(question.id);
+  const hasDraft = Boolean(progress.answers && Object.prototype.hasOwnProperty.call(progress.answers, question.id) && progress.answers[question.id] !== question.starter_code);
+  if (completed) {
+    return { label: "Completed", className: "is-completed" };
+  }
+  if (index === currentIndex) {
+    return { label: hasDraft ? "Current draft" : "Current", className: "is-current" };
+  }
+  if (hasDraft) {
+    return { label: "Draft", className: "is-draft" };
+  }
+  return { label: "Not started", className: "" };
+}
+
+function refreshQuestionTrackerUi() {
+  if (!window.__CHAPTER_DATA__) {
+    return;
+  }
+  const progress = getChapterProgress(window.__CHAPTER_DATA__.id, questions.length);
+  document.querySelectorAll("[data-question-jump]").forEach((item, index) => {
+    const question = questions[index];
+    if (!question) {
+      return;
+    }
+    const view = questionStateFor(question, progress, index);
+    item.classList.remove("is-current", "is-completed", "is-draft");
+    if (view.className) {
+      item.classList.add(view.className);
+    }
+    const state = item.querySelector(".question-tracker-state");
+    if (state) {
+      state.textContent = view.label;
+    }
+  });
 }
 
 function chapterUi() {
@@ -189,6 +227,15 @@ function goToNextQuestion() {
     updateNavigationState();
     showInlineNext();
   }
+}
+
+function jumpToQuestion(index) {
+  if (index < 0 || index >= questions.length) {
+    return;
+  }
+  currentIndex = index;
+  persistCurrentQuestionIndex();
+  renderCurrentQuestion(true);
 }
 
 function persistCurrentQuestionIndex() {
@@ -644,6 +691,12 @@ function bindQuizUi() {
   Object.entries(actionHandlers).forEach(([action, handler]) => {
     findActionElements(action).forEach((element) => {
       element.addEventListener("click", handler);
+    });
+  });
+
+  document.querySelectorAll("[data-question-jump]").forEach((element) => {
+    element.addEventListener("click", () => {
+      jumpToQuestion(Number(element.dataset.questionJump));
     });
   });
 
