@@ -134,6 +134,10 @@ function questionStateFor(question, progress, index) {
   return { label: "Not started", className: "" };
 }
 
+function syncInlineNextVisibility() {
+  showInlineNext();
+}
+
 function refreshQuestionTrackerUi() {
   if (!window.__CHAPTER_DATA__) {
     return;
@@ -501,6 +505,7 @@ function buildEditor() {
       lastRunPassed = false;
       lastRunQuestionId = question ? question.id : null;
       persistCurrentAnswer();
+      syncInlineNextVisibility();
     });
   } else {
     tutorialViewer = tutorialTextarea ? { refresh: () => {} } : null;
@@ -556,7 +561,7 @@ function renderCurrentQuestion(resetCode = false) {
   hintCounts = {};
   lastRunPassed = false;
   lastRunQuestionId = question.id;
-  hideInlineNext();
+  syncInlineNextVisibility();
   updateNavigationState();
   persistCurrentQuestionIndex();
 }
@@ -640,7 +645,7 @@ async function sendCode(mode) {
     }
     showInlineNext();
   } else {
-    hideInlineNext();
+    syncInlineNextVisibility();
   }
 }
 
