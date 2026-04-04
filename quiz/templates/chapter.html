@@ -15,6 +15,10 @@
         <p class="eyebrow">Chapter {{ chapter.number }}</p>
         <h1>{{ chapter.title }}</h1>
         <p class="sidebar-copy">{{ chapter.summary }}</p>
+        <div class="chapter-progress-box" data-current-chapter-status data-chapter-id="{{ chapter.id }}" data-question-count="{{ chapter.questions|length }}">
+          <span class="chapter-status-badge" data-current-chapter-badge>Not started</span>
+          <p class="chapter-progress-copy" data-current-chapter-progress>0 / {{ chapter.questions|length }} complete</p>
+        </div>
         <div class="chapter-list-block">
           <h2 class="sidebar-section-title">Chapters</h2>
           <div class="chapter-sidebar-list">
@@ -22,10 +26,14 @@
             <div class="chapter-sidebar-entry">
               <a
                 class="chapter-sidebar-item {% if sidebar_chapter.id == chapter.id %}active{% endif %}"
+                data-sidebar-chapter
+                data-chapter-id="{{ sidebar_chapter.id }}"
+                data-question-count="{{ sidebar_chapter.question_count }}"
                 href="{{ url_for('chapter_page', chapter_id=sidebar_chapter.id) }}"
               >
                 <strong>{{ sidebar_chapter.number }}</strong>
                 <span>{{ sidebar_chapter.title }}</span>
+                <span class="chapter-sidebar-status" data-sidebar-status>Not started</span>
               </a>
               {% if sidebar_chapter.id == chapter.id %}
               <div class="chapter-subnav">

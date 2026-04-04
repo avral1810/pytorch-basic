@@ -17,17 +17,24 @@
       <section class="chapter-grid">
         {% for chapter in chapters %}
         <a class="chapter-card-link" href="{{ url_for('chapter_page', chapter_id=chapter.id) }}">
-        <article class="chapter-card">
+        <article class="chapter-card" data-chapter-card data-chapter-id="{{ chapter.id }}" data-question-count="{{ chapter.question_count }}">
           <img src="{{ url_for('chapter_assets', filename=chapter.image) }}" alt="{{ chapter.title }}" class="chapter-card-image">
-          <p class="lesson-tag">Chapter {{ chapter.number }}</p>
+          <div class="chapter-card-topline">
+            <p class="lesson-tag">Chapter {{ chapter.number }}</p>
+            <span class="chapter-status-badge" data-chapter-status>Not started</span>
+          </div>
           <h2>{{ chapter.title }}</h2>
           <p>{{ chapter.summary }}</p>
-          <p class="card-meta">{{ chapter.question_count }} quiz question{% if chapter.question_count != 1 %}s{% endif %}</p>
+          <p class="card-meta">
+            <span>{{ chapter.question_count }} quiz question{% if chapter.question_count != 1 %}s{% endif %}</span>
+            <span data-chapter-progress-text>0 / {{ chapter.question_count }} complete</span>
+          </p>
           <span class="card-link">Open Chapter</span>
         </article>
         </a>
         {% endfor %}
       </section>
     </main>
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
   </body>
 </html>

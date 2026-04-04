@@ -6,6 +6,117 @@ let currentIndex = 0;
 let hintCounts = {};
 let lastRunPassed = false;
 let lastRunQuestionId = null;
+const PROGRESS_STORAGE_KEY = "quiz-progress-v1";
+
+function loadProgressStore() {
+  try {
+    return JSON.parse(window.localStorage.getItem(PROGRESS_STORAGE_KEY) || "{}");
+  } catch (error) {
+    return {};
+  }
+}
+
+function saveProgressStore(store) {
+  window.localStorage.setItem(PROGRESS_STORAGE_KEY, JSON.stringify(store));
+}
+
+function getChapterProgress(chapterId, questionCount = 0) {
+  const store = loadProgressStore();
+  const progress = store[chapterId] || {};
+  const completedQuestions = Array.isArray(progress.completed_questions) ? progress.completed_questions : [];
+  const answers = progress.answers && typeof progress.answers === "object" ? progress.answers : {};
+  const currentQuestionIndex = Number.isInteger(progress.current_question_index) ? progress.current_question_index : 0;
+  const completed = Boolean(progress.completed) || (questionCount > 0 && completedQuestions.length >= questionCount);
+  return {
+    completed,
+    completed_questions: completedQuestions,
+    answers,
+    current_question_index: currentQuestionIndex,
+  };
+}
+
+function updateChapterProgress(chapterId, updater, questionCount = 0) {
+  const store = loadProgressStore();
+  const current = getChapterProgress(chapterId, questionCount);
+  const next = updater(current);
+  store[chapterId] = {
+    completed: Boolean(next.completed),
+    completed_questions: Array.from(new Set(next.completed_questions || [])),
+    answers: next.answers || {},
+    current_question_index: Number.isInteger(next.current_question_index) ? next.current_question_index : 0,
+  };
+  saveProgressStore(store);
+  refreshSavedProgressUi();
+}
+
+function describeChapterProgress(progress, questionCount) {
+  const completeCount = Math.min(progress.completed_questions.length, questionCount);
+  if (progress.completed) {
+    return { label: "Completed", progressText: `${questionCount} / ${questionCount} complete`, className: "is-complete" };
+  }
+  if (completeCount > 0 || Object.keys(progress.answers).length > 0) {
+    return { label: "In progress", progressText: `${completeCount} / ${questionCount} complete`, className: "is-in-progress" };
+  }
+  return { label: "Not started", progressText: `0 / ${questionCount} complete`, className: "" };
+}
+
+function applyStatusBadge(element, label, className) {
+  if (!element) {
+    return;
+  }
+  element.textContent = label;
+  element.classList.remove("is-in-progress", "is-complete");
+  if (className) {
+    element.classList.add(className);
+  }
+}
+
+function refreshHomeProgressUi() {
+  document.querySelectorAll("[data-chapter-card]").forEach((card) => {
+    const chapterId = card.dataset.chapterId;
+    const questionCount = Number(card.dataset.questionCount || "0");
+    const progress = getChapterProgress(chapterId, questionCount);
+    const view = describeChapterProgress(progress, questionCount);
+    applyStatusBadge(card.querySelector("[data-chapter-status]"), view.label, view.className);
+    const progressText = card.querySelector("[data-chapter-progress-text]");
+    if (progressText) {
+      progressText.textContent = view.progressText;
+    }
+  });
+}
+
+function refreshSidebarProgressUi() {
+  document.querySelectorAll("[data-sidebar-chapter]").forEach((entry) => {
+    const chapterId = entry.dataset.chapterId;
+    const questionCount = Number(entry.dataset.questionCount || "0");
+    const progress = getChapterProgress(chapterId, questionCount);
+    const view = describeChapterProgress(progress, questionCount);
+    const status = entry.querySelector("[data-sidebar-status]");
+    if (status) {
+      status.textContent = view.label;
+    }
+  });
+
+  const currentShell = document.querySelector("[data-current-chapter-status]");
+  if (!currentShell) {
+    return;
+  }
+
+  const chapterId = currentShell.dataset.chapterId;
+  const questionCount = Number(currentShell.dataset.questionCount || "0");
+  const progress = getChapterProgress(chapterId, questionCount);
+  const view = describeChapterProgress(progress, questionCount);
+  applyStatusBadge(currentShell.querySelector("[data-current-chapter-badge]"), view.label, view.className);
+  const progressText = currentShell.querySelector("[data-current-chapter-progress]");
+  if (progressText) {
+    progressText.textContent = view.progressText;
+  }
+}
+
+function refreshSavedProgressUi() {
+  refreshHomeProgressUi();
+  refreshSidebarProgressUi();
+}
 
 function chapterUi() {
   return (window.__CHAPTER_DATA__ && window.__CHAPTER_DATA__.ui) || {};
@@ -70,12 +181,87 @@ function showInlineNext() {
 function goToNextQuestion() {
   if (currentIndex < questions.length - 1) {
     currentIndex += 1;
+    persistCurrentQuestionIndex();
     renderCurrentQuestion(true);
   } else {
+    markCurrentChapterComplete();
     setSummaryHtml('<p class="status-pass">You finished this chapter quiz. Use the next chapter link in the sidebar to continue.</p>');
     updateNavigationState();
     showInlineNext();
   }
+}
+
+function persistCurrentQuestionIndex() {
+  const chapter = window.__CHAPTER_DATA__;
+  if (!chapter) {
+    return;
+  }
+  updateChapterProgress(chapter.id, (progress) => ({
+    ...progress,
+    current_question_index: currentIndex,
+  }), questions.length);
+}
+
+function persistCurrentAnswer() {
+  const chapter = window.__CHAPTER_DATA__;
+  const question = currentQuestion();
+  if (!chapter || !question || !editor) {
+    return;
+  }
+  updateChapterProgress(chapter.id, (progress) => ({
+    ...progress,
+    answers: {
+      ...progress.answers,
+      [question.id]: editor.getValue(),
+    },
+    current_question_index: currentIndex,
+  }), questions.length);
+}
+
+function markQuestionCompleted(questionId) {
+  const chapter = window.__CHAPTER_DATA__;
+  if (!chapter || !questionId) {
+    return;
+  }
+  updateChapterProgress(chapter.id, (progress) => {
+    const completedQuestions = Array.from(new Set([...(progress.completed_questions || []), questionId]));
+    return {
+      ...progress,
+      completed_questions: completedQuestions,
+      completed: completedQuestions.length >= questions.length,
+      current_question_index: currentIndex,
+    };
+  }, questions.length);
+}
+
+function markCurrentChapterComplete() {
+  const chapter = window.__CHAPTER_DATA__;
+  if (!chapter) {
+    return;
+  }
+  updateChapterProgress(chapter.id, (progress) => ({
+    ...progress,
+    completed: true,
+    completed_questions: questions.map((question) => question.id),
+    current_question_index: currentIndex,
+  }), questions.length);
+}
+
+function resetCurrentAnswer() {
+  const chapter = window.__CHAPTER_DATA__;
+  const question = currentQuestion();
+  if (!chapter || !question) {
+    return;
+  }
+  updateChapterProgress(chapter.id, (progress) => {
+    const answers = { ...progress.answers };
+    delete answers[question.id];
+    return {
+      ...progress,
+      answers,
+      current_question_index: currentIndex,
+    };
+  }, questions.length);
 }
 
 function openPdfDrawer(url) {
@@ -267,6 +453,7 @@ function buildEditor() {
       const question = currentQuestion();
       lastRunPassed = false;
       lastRunQuestionId = question ? question.id : null;
+      persistCurrentAnswer();
     });
   } else {
     tutorialViewer = tutorialTextarea ? { refresh: () => {} } : null;
@@ -306,7 +493,10 @@ function renderCurrentQuestion(resetCode = false) {
   });
 
   if (resetCode && editor) {
-    editor.setValue(question.starter_code);
+    const chapter = window.__CHAPTER_DATA__;
+    const progress = chapter ? getChapterProgress(chapter.id, questions.length) : null;
+    const savedCode = progress && progress.answers ? progress.answers[question.id] : undefined;
+    editor.setValue(savedCode ?? question.starter_code);
     if (editor.refresh) editor.refresh();
   }
 
@@ -321,6 +511,7 @@ function renderCurrentQuestion(resetCode = false) {
   lastRunQuestionId = question.id;
   hideInlineNext();
   updateNavigationState();
+  persistCurrentQuestionIndex();
 }
 
 function formatResults(payload) {
@@ -394,6 +585,12 @@ async function sendCode(mode) {
     lastRunQuestionId = question.id;
   }
   if (isSuccessfulSubmit(payload, mode)) {
+    if (mode === "submit") {
+      markQuestionCompleted(question.id);
+      if (currentIndex === questions.length - 1) {
+        markCurrentChapterComplete();
+      }
+    }
     showInlineNext();
   } else {
     hideInlineNext();
@@ -420,7 +617,10 @@ function bindQuizUi() {
     "run-code": triggerRun,
     "submit-code": triggerSubmit,
     "show-hint": applyGlobalHint,
-    "reset-question": () => renderCurrentQuestion(true),
+    "reset-question": () => {
+      resetCurrentAnswer();
+      renderCurrentQuestion(true);
+    },
     "previous-question": () => {
       if (currentIndex > 0) {
         currentIndex -= 1;
@@ -477,11 +677,16 @@ function bindQuizUi() {
 }
 
 window.addEventListener("DOMContentLoaded", () => {
+  refreshSavedProgressUi();
   if (!window.__CHAPTER_DATA__) {
     return;
   }
 
   questions = window.__CHAPTER_DATA__.questions || [];
+  const savedProgress = getChapterProgress(window.__CHAPTER_DATA__.id, questions.length);
+  if (questions.length > 0) {
+    currentIndex = Math.min(Math.max(savedProgress.current_question_index || 0, 0), questions.length - 1);
+  }
   buildEditor();
   bindQuizUi();
   renderCurrentQuestion(true);
