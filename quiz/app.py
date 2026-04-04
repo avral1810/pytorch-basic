@@ -1,30 +1,26 @@
 from __future__ import annotations
 
-import json
-import subprocess
-import sys
-import tempfile
+import os
 from pathlib import Path
 
 from flask import Flask, abort, jsonify, render_template, request, send_file, send_from_directory
 
 from quiz.content.data import get_chapter, public_chapter_summaries
 from quiz.questions.data import QUESTIONS_BY_ID, get_public_chapter_detail
+from quiz.runner.persistent import PersistentRunner, runner_python
 
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
 QUIZ_DIR = ROOT_DIR / "quiz"
 CONTENT_ASSET_DIR = QUIZ_DIR / "content" / "assets" / "chapters"
-RUNNER_MODULE = "quiz.runner.run_submission"
+EXECUTION_TIMEOUT_SECONDS = int(os.environ.get("QUIZ_EXECUTION_TIMEOUT_SECONDS", "30"))
+RUNNER = PersistentRunner()
 
 app = Flask(__name__, template_folder=str(QUIZ_DIR / "templates"), static_folder=str(QUIZ_DIR / "static"))
 
 
-def runner_python() -> str:
-    local_python = QUIZ_DIR / ".venv" / "bin" / "python"
-    if local_python.exists():
-        return str(local_python)
-    return sys.executable
+def timeout_error(message_prefix: str) -> str:
+    return f"{message_prefix} timed out after {EXECUTION_TIMEOUT_SECONDS} seconds."
 
 
 def execute_submission(chapter_id: str, question_id: str, code: str, mode: str) -> tuple[dict[str, object], int]:
@@ -38,33 +34,17 @@ def execute_submission(chapter_id: str, question_id: str, code: str, mode: str) 
     if question.chapter_id != chapter_id or question_id not in chapter["question_ids"]:
         return {"ok": False, "error": "Question does not belong to the requested chapter."}, 400
 
-    with tempfile.TemporaryDirectory(prefix="quiz-run-") as temp_dir:
-        solution_path = Path(temp_dir) / "solution.py"
-        solution_path.write_text(code, encoding="utf-8")
-        command = [runner_python(), "-m", RUNNER_MODULE, question_id, mode, str(solution_path)]
-        try:
-            completed = subprocess.run(
-                command,
-                cwd=str(ROOT_DIR),
-                capture_output=True,
-                text=True,
-                timeout=8,
-                check=False,
-            )
-        except subprocess.TimeoutExpired:
-            return {
-                "ok": False,
+    try:
+        payload = RUNNER.request(
+            {
+                "type": "submission",
+                "question_id": question_id,
                 "mode": mode,
-                "passed": 0,
-                "total": 0,
-                "results": [],
-                "stdout": "",
-                "stderr": "",
-                "error": "Execution timed out after 8 seconds.",
-            }, 200
-
-    stdout = completed.stdout.strip()
-    if not stdout:
+                "code": code,
+            },
+            timeout_seconds=EXECUTION_TIMEOUT_SECONDS,
+        )
+    except TimeoutError:
         return {
             "ok": False,
             "mode": mode,
@@ -72,49 +52,26 @@ def execute_submission(chapter_id: str, question_id: str, code: str, mode: str) 
             "total": 0,
             "results": [],
             "stdout": "",
-            "stderr": completed.stderr,
-            "error": "Runner returned no JSON output.",
-        }, 200
-
-    try:
-        payload = json.loads(stdout)
-    except json.JSONDecodeError:
-        return {
-            "ok": False,
-            "mode": mode,
-            "passed": 0,
-            "total": 0,
-            "results": [],
-            "stdout": completed.stdout,
-            "stderr": completed.stderr,
-            "error": "Runner output could not be parsed as JSON.",
+            "stderr": "",
+            "error": timeout_error("Execution"),
         }, 200
 
     return payload, 200
 
 
 def execute_playground(code: str) -> tuple[dict[str, object], int]:
-    with tempfile.TemporaryDirectory(prefix="quiz-playground-") as temp_dir:
-        script_path = Path(temp_dir) / "playground.py"
-        script_path.write_text(code, encoding="utf-8")
-        try:
-            completed = subprocess.run(
-                [runner_python(), str(script_path)],
-                cwd=str(ROOT_DIR),
-                capture_output=True,
-                text=True,
-                timeout=8,
-                check=False,
-            )
-        except subprocess.TimeoutExpired:
-            return {"ok": False, "stdout": "", "stderr": "", "error": "Playground execution timed out after 8 seconds."}, 200
+    try:
+        payload = RUNNER.request(
+            {
+                "type": "playground",
+                "code": code,
+            },
+            timeout_seconds=EXECUTION_TIMEOUT_SECONDS,
+        )
+    except TimeoutError:
+        return {"ok": False, "stdout": "", "stderr": "", "error": timeout_error("Playground execution")}, 200
 
-    return {
-        "ok": completed.returncode == 0,
-        "stdout": completed.stdout,
-        "stderr": completed.stderr,
-        "error": "" if completed.returncode == 0 else f"Exited with status {completed.returncode}",
-    }, 200
+    return payload, 200
 
 
 @app.get("/")
@@ -145,7 +102,7 @@ def chapter_detail(chapter_id: str):
 
 @app.get("/api/health")
 def health():
-    return jsonify({"ok": True, "python": runner_python()})
+    return jsonify({"ok": True, "python": runner_python(), "execution_timeout_seconds": EXECUTION_TIMEOUT_SECONDS})
 
 
 @app.get("/chapter-assets/<path:filename>")
@@ -186,4 +143,8 @@ def submit_code():
 
 
 if __name__ == "__main__":
+    try:
+        RUNNER.request({"type": "warmup"}, timeout_seconds=EXECUTION_TIMEOUT_SECONDS)
+    except TimeoutError:
+        RUNNER.close()
     app.run(host="127.0.0.1", port=8000, debug=False)
