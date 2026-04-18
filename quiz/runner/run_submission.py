@@ -33,14 +33,14 @@ def _load_solution_module_from_path(solution_path: Path):
 
 def load_solution_module(solution_path: Path):
     try:
-        return _load_solution_module_from_path(solution_path)
+        return _load_solution_module_from_path(solution_path), None
     except (IndentationError, TabError):
         original_code = solution_path.read_text(encoding="utf-8")
         normalized_code = normalize_indentation(original_code)
         if normalized_code == original_code:
             raise
         solution_path.write_text(normalized_code, encoding="utf-8")
-        return _load_solution_module_from_path(solution_path)
+        return _load_solution_module_from_path(solution_path), normalized_code
 
 
 def serialize_value(value):
@@ -146,9 +146,10 @@ def select_tests(question, mode: str):
 def run_tests(question, solution_path: Path, mode: str) -> dict[str, object]:
     stdout_buffer = io.StringIO()
     stderr_buffer = io.StringIO()
+    normalized_code = None
 
     with redirect_stdout(stdout_buffer), redirect_stderr(stderr_buffer):
-        solution_module = load_solution_module(solution_path)
+        solution_module, normalized_code = load_solution_module(solution_path)
         tests = select_tests(question, mode)
 
         results: list[dict[str, object]] = []
@@ -198,6 +199,8 @@ def run_tests(question, solution_path: Path, mode: str) -> dict[str, object]:
         "results": results,
         "stdout": stdout_buffer.getvalue(),
         "stderr": stderr_buffer.getvalue(),
+        "autofixed": normalized_code is not None,
+        "normalized_code": normalized_code,
     }
 
 

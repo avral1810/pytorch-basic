@@ -760,6 +760,9 @@ async function sendCode(mode) {
   });
 
   const payload = await response.json();
+  if (payload.autofixed && typeof payload.normalized_code === "string" && editor) {
+    editor.setValue(payload.normalized_code);
+  }
   setSummaryHtml(formatResults(payload));
   bindHintButtons();
   setPlainOutput("stdout-output", payload.stdout);
