@@ -41,6 +41,7 @@ def relu(x: torch.Tensor) -> torch.Tensor:
 def main() -> None:
     train_x, train_y = make_dataset(900)
     test_x, test_y = make_dataset(180)
+    torch.manual_seed(123)
 
     conv1_weight = (torch.randn(8, 1, 3, 3) * 0.1).requires_grad_()
     conv1_bias = torch.zeros(8, requires_grad=True)

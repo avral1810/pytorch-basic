@@ -40,6 +40,7 @@ def make_data(n: int = 1000) -> tuple[torch.Tensor, torch.Tensor]:
 
 def main() -> None:
     x, y = make_data()
+    torch.manual_seed(17)
     train_loader = DataLoader(TensorDataset(x[:800], y[:800]), batch_size=64, shuffle=True)
     val_x, val_y = x[800:], y[800:]
 

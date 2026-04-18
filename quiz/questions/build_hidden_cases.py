@@ -4,6 +4,8 @@ import json
 import zlib
 from pathlib import Path
 
+from quiz.questions.extra_hidden_cases import EXTRA_HIDDEN_CASES
+
 
 def tensor(value, dtype: str | None = None, *, requires_grad: bool = False, grad: dict[str, object] | None = None) -> dict[str, object]:
     payload: dict[str, object] = {"__kind__": "tensor", "value": value}
@@ -144,6 +146,8 @@ HIDDEN_CASES = {
         {"name": "handles negative values", "args": [tensor([[1, -2], [3, -4]])], "assertions": [{"kind": "tensor_equal", "expected": tensor([4, -6])}], "hint": "Column sums should still work when some values are negative."},
     ],
 }
+
+HIDDEN_CASES.update(EXTRA_HIDDEN_CASES)
 
 
 def main() -> None:

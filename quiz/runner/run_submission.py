@@ -112,7 +112,12 @@ def select_tests(question, mode: str):
         if generated:
             return generated
 
-    test_module = importlib.import_module(question.tests.module_name)
+    try:
+        test_module = importlib.import_module(question.tests.module_name)
+    except ModuleNotFoundError:
+        if question.tests.hidden_binary_key:
+            return []
+        raise
     if mode == "run":
         return test_module.get_visible_tests()
     return test_module.get_hidden_tests()

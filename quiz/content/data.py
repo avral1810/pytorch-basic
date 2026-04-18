@@ -233,7 +233,7 @@ CHAPTERS = [
         "image": "03_linear_regression.svg",
         "script_path": "tutorials/03_linear_regression_with_nn_module.py",
         "pdf_path": "tutorials/pdfs/03_linear_regression_with_nn_module.pdf",
-        "question_ids": ["q05_tiny_linear_forward", "q18_build_linear_layer", "q19_make_regression_loader", "q20_compute_mse_loss", "q21_run_training_step"],
+        "question_ids": ["q05_tiny_linear_forward", "q18_build_linear_layer", "q19_make_regression_loader", "q20_compute_mse_loss", "q21_run_training_step", "q96_train_full_linear_regression"],
         "previous_chapter": "02",
         "next_chapter": "04",
         "sections": [
@@ -313,7 +313,7 @@ CHAPTERS = [
         "image": "06_xor_neural_network.jpg",
         "script_path": "tutorials/05_logistic_regression_with_nn_module.py",
         "pdf_path": "tutorials/pdfs/05_logistic_regression_with_nn_module.pdf",
-        "question_ids": ["q07_logistic_module_forward", "q26_build_logistic_layer", "q27_logits_to_probs", "q28_make_bce_loss", "q29_predict_binary_classes"],
+        "question_ids": ["q07_logistic_module_forward", "q26_build_logistic_layer", "q27_logits_to_probs", "q28_make_bce_loss", "q29_predict_binary_classes", "q97_train_full_logistic_regression"],
         "previous_chapter": "04",
         "next_chapter": None,
         "sections": [
@@ -351,7 +351,7 @@ CHAPTERS = [
         "image": "07_mlp_training_loop.svg",
         "script_path": "tutorials/06_manual_mlp_from_scratch.py",
         "pdf_path": "tutorials/pdfs/06_manual_mlp_from_scratch.pdf",
-        "question_ids": [],
+        "question_ids": ["q36_init_manual_mlp_params", "q37_manual_mlp_forward", "q38_manual_predict_classes", "q39_manual_mlp_loss", "q40_train_manual_mlp"],
         "previous_chapter": "05",
         "next_chapter": "07",
         "sections": [
@@ -400,7 +400,7 @@ CHAPTERS = [
         "image": "05_perceptron.png",
         "script_path": "tutorials/07_basic_nn_mlp_with_nn_module.py",
         "pdf_path": "tutorials/pdfs/07_basic_nn_mlp_with_nn_module.pdf",
-        "question_ids": [],
+        "question_ids": ["q41_build_mlp_sequential", "q42_make_classification_loader", "q43_compute_multiclass_accuracy", "q44_run_mlp_training_epoch", "q45_train_module_mlp"],
         "previous_chapter": "06",
         "next_chapter": "15",
         "sections": [
@@ -446,7 +446,7 @@ CHAPTERS = [
         "image": "08_convolutional_network.png",
         "script_path": "tutorials/08_cnn_basics.py",
         "pdf_path": "tutorials/pdfs/08_cnn_basics.pdf",
-        "question_ids": [],
+        "question_ids": ["q51_build_cnn_feature_extractor", "q52_conv_output_size", "q53_build_cnn_classifier_head", "q54_flatten_cnn_batch", "q55_predict_cnn_classes"],
         "previous_chapter": "15",
         "next_chapter": "09",
         "sections": [
@@ -489,7 +489,7 @@ CHAPTERS = [
         "image": "09_convolutional_neural_network.png",
         "script_path": "tutorials/09_vision_classifier.py",
         "pdf_path": "tutorials/pdfs/09_vision_classifier.pdf",
-        "question_ids": [],
+        "question_ids": ["q56_add_channel_dim", "q57_build_pattern_loader", "q58_compute_loader_accuracy", "q59_build_vision_cnn", "q60_generate_diagonal_pattern"],
         "previous_chapter": "08",
         "next_chapter": "16",
         "sections": [
@@ -532,7 +532,7 @@ CHAPTERS = [
         "image": "10_lstm_cell.png",
         "script_path": "tutorials/10_lstm_sequence_classifier.py",
         "pdf_path": "tutorials/pdfs/10_lstm_sequence_classifier.pdf",
-        "question_ids": [],
+        "question_ids": ["q71_build_embedding_layer", "q72_build_lstm_layer", "q73_take_lstm_final_hidden", "q74_build_lstm_classifier_head", "q75_predict_lstm_classes"],
         "previous_chapter": "14",
         "next_chapter": "17",
         "sections": [
@@ -574,7 +574,7 @@ CHAPTERS = [
         "image": "11_encoder_self_attention.png",
         "script_path": "tutorials/11_transformer_basics.py",
         "pdf_path": "tutorials/pdfs/11_transformer_basics.pdf",
-        "question_ids": [],
+        "question_ids": ["q81_pool_encoder_output", "q82_build_transformer_encoder_layer", "q83_build_transformer_classifier_head", "q84_make_transformer_labels", "q85_predict_transformer_classes"],
         "previous_chapter": "17",
         "next_chapter": "12",
         "sections": [
@@ -612,7 +612,7 @@ CHAPTERS = [
         "image": "12_gan_illustration.png",
         "script_path": "tutorials/12_toy_gan.py",
         "pdf_path": "tutorials/pdfs/12_toy_gan.pdf",
-        "question_ids": [],
+        "question_ids": ["q86_build_generator", "q87_build_discriminator", "q88_sample_gan_noise", "q89_make_real_and_fake_targets", "q90_detach_fake_batch"],
         "previous_chapter": "11",
         "next_chapter": "13",
         "sections": [
@@ -647,7 +647,7 @@ CHAPTERS = [
         "image": "13_mac_m1_chip.jpg",
         "script_path": "tutorials/13_device_cpu_to_mps.py",
         "pdf_path": "tutorials/pdfs/13_device_cpu_to_mps.pdf",
-        "question_ids": [],
+        "question_ids": ["q91_get_device", "q92_move_module_to_device", "q93_make_device_inputs", "q94_move_tensor_pair_to_device", "q95_same_device"],
         "previous_chapter": "12",
         "next_chapter": None,
         "sections": [
@@ -678,7 +678,7 @@ CHAPTERS = [
         "image": "14_rnn_unfold.svg",
         "script_path": "tutorials/14_basic_rnn_sequence_classifier.py",
         "pdf_path": "tutorials/pdfs/14_basic_rnn_sequence_classifier.pdf",
-        "question_ids": [],
+        "question_ids": ["q66_build_vanilla_rnn", "q67_take_last_hidden", "q68_make_rnn_labels", "q69_build_rnn_classifier_head", "q70_predict_rnn_classes"],
         "previous_chapter": "16",
         "next_chapter": "10",
         "sections": [
@@ -712,7 +712,7 @@ CHAPTERS = [
         "image": "08_convolutional_network.png",
         "script_path": "tutorials/15_manual_cnn_from_scratch.py",
         "pdf_path": "tutorials/pdfs/15_manual_cnn_from_scratch.pdf",
-        "question_ids": [],
+        "question_ids": ["q46_init_manual_cnn_params", "q47_manual_conv_relu_pool", "q48_flatten_image_features", "q49_manual_cnn_classifier", "q50_predict_image_classes"],
         "previous_chapter": "07",
         "next_chapter": "08",
         "sections": [
@@ -737,7 +737,7 @@ CHAPTERS = [
         "image": "14_rnn_unfold.svg",
         "script_path": "tutorials/16_manual_rnn_from_scratch.py",
         "pdf_path": "tutorials/pdfs/16_manual_rnn_from_scratch.pdf",
-        "question_ids": [],
+        "question_ids": ["q61_embedding_lookup", "q62_manual_rnn_step", "q63_run_manual_rnn", "q64_manual_sequence_logits", "q65_predict_manual_rnn_classes"],
         "previous_chapter": "09",
         "next_chapter": "14",
         "sections": [
@@ -761,7 +761,7 @@ CHAPTERS = [
         "image": "11_encoder_self_attention.png",
         "script_path": "tutorials/17_manual_transformer_from_scratch.py",
         "pdf_path": "tutorials/pdfs/17_manual_transformer_from_scratch.pdf",
-        "question_ids": [],
+        "question_ids": ["q76_positional_encoding", "q77_scaled_attention_scores", "q78_attention_weighted_values", "q79_mean_pool_sequence", "q80_manual_transformer_logits"],
         "previous_chapter": "10",
         "next_chapter": "11",
         "sections": [

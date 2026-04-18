@@ -29,6 +29,7 @@ def make_data(n: int = 1000) -> tuple[torch.Tensor, torch.Tensor]:
 def main() -> None:
     train_x, train_y = make_data(800)
     val_x, val_y = make_data(200)
+    torch.manual_seed(99)
 
     embedding_table = (torch.randn(VOCAB_SIZE, EMBED_DIM) * 0.1).requires_grad_()
     w_q = (torch.randn(EMBED_DIM, EMBED_DIM) * 0.2).requires_grad_()

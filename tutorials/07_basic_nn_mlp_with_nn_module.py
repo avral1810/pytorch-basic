@@ -43,6 +43,7 @@ def accuracy(logits: torch.Tensor, targets: torch.Tensor) -> float:
 
 def main() -> None:
     x, y = make_xor_like_data()
+    torch.manual_seed(42)
     split = int(0.8 * len(x))
 
     # Use the first 80% for training and the rest for validation.

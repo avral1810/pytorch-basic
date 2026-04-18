@@ -26,6 +26,7 @@ def make_data() -> tuple[torch.Tensor, torch.Tensor]:
 
 def main() -> None:
     x, y = make_data()
+    torch.manual_seed(7)
     # TensorDataset pairs each x row with its matching y row.
     # DataLoader then groups them into batches.
     loader = DataLoader(TensorDataset(x, y), batch_size=32, shuffle=True)

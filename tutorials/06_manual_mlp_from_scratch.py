@@ -19,6 +19,7 @@ def relu(x: torch.Tensor) -> torch.Tensor:
 
 def main() -> None:
     x, y = make_data()
+    torch.manual_seed(42)
 
     # Raw parameters for a 2 -> 16 -> 2 network.
     # w1 maps 2 input features to 16 hidden features.

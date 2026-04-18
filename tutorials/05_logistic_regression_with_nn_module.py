@@ -25,6 +25,7 @@ def make_data(n: int = 400) -> tuple[torch.Tensor, torch.Tensor]:
 
 def main() -> None:
     x, y = make_data()
+    torch.manual_seed(12)
     # DataLoader lets us train with smaller chunks of data instead of all 400 at once.
     loader = DataLoader(TensorDataset(x, y), batch_size=32, shuffle=True)
 

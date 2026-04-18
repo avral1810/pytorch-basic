@@ -75,6 +75,7 @@ def accuracy(logits: torch.Tensor, labels: torch.Tensor) -> float:
 
 def main() -> None:
     x, y = make_sequence_data()
+    torch.manual_seed(99)
     split = 800
 
     # Use the last 200 examples as validation.

@@ -47,7 +47,6 @@ def sample_noise(batch_size: int) -> torch.Tensor:
 
 def main() -> None:
     torch.manual_seed(0)
-
     generator = Generator()
     discriminator = Discriminator()
 

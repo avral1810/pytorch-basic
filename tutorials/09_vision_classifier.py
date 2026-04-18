@@ -82,6 +82,7 @@ def evaluate(model: nn.Module, loader: DataLoader) -> float:
 
 
 def main() -> None:
+    torch.manual_seed(123)
     train_loader = DataLoader(PatternDataset(900), batch_size=64, shuffle=True)
     test_loader = DataLoader(PatternDataset(180), batch_size=64)
 

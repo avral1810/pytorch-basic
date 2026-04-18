@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from quiz.questions.extra_answer_keys import EXTRA_ANSWER_CODES
+
 
 ANSWER_CODES = {
     "q30_create_tensor_from_list": """import torch
@@ -252,3 +254,5 @@ def predict_binary_classes(logits: torch.Tensor) -> torch.Tensor:
     return (probs >= 0.5).float()
 """,
 }
+
+ANSWER_CODES.update(EXTRA_ANSWER_CODES)

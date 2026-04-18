@@ -5,6 +5,7 @@ from pathlib import Path
 
 from quiz.content.data import get_chapter
 from quiz.questions.answer_keys import ANSWER_CODES
+from quiz.questions.extra_questions import EXTRA_QUESTIONS
 from quiz.questions.models import QuestionAnswer, QuestionTemplate, QuestionTests, QuestionText, Quiz, QuizQuestion
 
 ROOT_DIR = Path(__file__).resolve().parents[2]
@@ -316,6 +317,8 @@ def predict_binary_classes(logits: torch.Tensor) -> torch.Tensor:
     raise NotImplementedError("Replace this line with your code.")
 """, ["The output should contain only 0.0 and 1.0.", "Values with sigmoid >= 0.5 should map to 1.0."], "quiz.questions.tests.q29_predict_binary_classes", symbol_name="predict_binary_classes", hidden_binary_key="q29_predict_binary_classes"),
 ]
+
+QUESTIONS.extend(EXTRA_QUESTIONS)
 
 
 QUESTIONS_BY_ID = {question.id: question for question in QUESTIONS}
