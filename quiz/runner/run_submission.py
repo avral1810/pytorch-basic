@@ -4,6 +4,7 @@ import importlib
 import importlib.util
 import io
 import json
+import re
 import sys
 import types
 import traceback
@@ -14,13 +15,32 @@ from quiz.questions.hidden_cases import build_hidden_tests
 from quiz.questions.data import QUESTIONS_BY_ID
 
 
-def load_solution_module(solution_path: Path):
+def normalize_indentation(code: str) -> str:
+    normalized_lines = []
+    for line in code.splitlines(keepends=True):
+        normalized_lines.append(re.sub(r"^[ \t]+", lambda match: match.group(0).expandtabs(4), line))
+    return "".join(normalized_lines)
+
+
+def _load_solution_module_from_path(solution_path: Path):
     spec = importlib.util.spec_from_file_location("learner_solution", solution_path)
     if spec is None or spec.loader is None:
         raise RuntimeError(f"Unable to load solution module from {solution_path}")
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
+
+
+def load_solution_module(solution_path: Path):
+    try:
+        return _load_solution_module_from_path(solution_path)
+    except (IndentationError, TabError):
+        original_code = solution_path.read_text(encoding="utf-8")
+        normalized_code = normalize_indentation(original_code)
+        if normalized_code == original_code:
+            raise
+        solution_path.write_text(normalized_code, encoding="utf-8")
+        return _load_solution_module_from_path(solution_path)
 
 
 def serialize_value(value):

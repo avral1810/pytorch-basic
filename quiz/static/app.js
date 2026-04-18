@@ -523,6 +523,83 @@ function toggleEditorComment() {
   }
 }
 
+function editorOptions(baseOptions = {}) {
+  return {
+    mode: "python",
+    theme: "material",
+    lineNumbers: true,
+    indentUnit: 4,
+    tabSize: 4,
+    indentWithTabs: false,
+    ...baseOptions,
+  };
+}
+
+function insertSoftTab(cm) {
+  if (!cm || typeof cm.replaceSelection !== "function") {
+    return;
+  }
+  cm.replaceSelection(" ".repeat(4), "end", "+input");
+}
+
+function wrapSelections(cm, openChar, closeChar) {
+  if (!cm || typeof cm.listSelections !== "function") {
+    return;
+  }
+
+  const selections = cm.listSelections();
+  const hasSelectedText = selections.some((selection) => !selection.empty());
+  if (!hasSelectedText) {
+    const cursor = cm.getCursor();
+    cm.replaceSelection(`${openChar}${closeChar}`, "around", "+input");
+    cm.setCursor(cursor.line, cursor.ch + 1);
+    return;
+  }
+
+  const replacements = cm.getSelections().map((selection) => `${openChar}${selection}${closeChar}`);
+  cm.replaceSelections(replacements, "around", "+input");
+}
+
+function bindWrappingKeys(cm) {
+  if (!cm || typeof cm.on !== "function") {
+    return;
+  }
+
+  const pairs = {
+    "(": ")",
+    "[": "]",
+    "{": "}",
+  };
+
+  cm.on("keydown", (_, event) => {
+    if (event.metaKey || event.ctrlKey || event.altKey) {
+      return;
+    }
+    const closeChar = pairs[event.key];
+    if (!closeChar) {
+      return;
+    }
+    event.preventDefault();
+    wrapSelections(cm, event.key, closeChar);
+  });
+}
+
+function normalizeEditorIndentation(cm) {
+  if (!cm || typeof cm.getValue !== "function" || typeof cm.setValue !== "function") {
+    return;
+  }
+
+  const rawCode = cm.getValue();
+  const normalizedCode = rawCode.replace(/^\t+/gm, (tabs) => " ".repeat(tabs.length * 4));
+  if (normalizedCode !== rawCode) {
+    const cursor = typeof cm.getCursor === "function" ? cm.getCursor() : null;
+    cm.setValue(normalizedCode);
+    if (cursor && typeof cm.setCursor === "function") {
+      cm.setCursor(cursor);
+    }
+  }
+}
+
 function buildEditor() {
   const textarea = document.getElementById("code-editor");
   const tutorialTextarea = document.getElementById("tutorial-script-editor");
@@ -533,37 +610,28 @@ function buildEditor() {
 
   if (window.CodeMirror) {
     if (tutorialTextarea) {
-      tutorialViewer = window.CodeMirror.fromTextArea(tutorialTextarea, {
-        mode: "python",
-        theme: "material",
-        lineNumbers: true,
+      tutorialViewer = window.CodeMirror.fromTextArea(tutorialTextarea, editorOptions({
         readOnly: "nocursor",
         lineWrapping: false,
-      });
+      }));
     }
     if (playgroundTextarea) {
-      playgroundEditor = window.CodeMirror.fromTextArea(playgroundTextarea, {
-        mode: "python",
-        theme: "material",
-        lineNumbers: true,
-        indentUnit: 4,
-        tabSize: 4,
+      playgroundEditor = window.CodeMirror.fromTextArea(playgroundTextarea, editorOptions());
+      playgroundEditor.addKeyMap({
+        Tab: () => { insertSoftTab(playgroundEditor); },
       });
+      bindWrappingKeys(playgroundEditor);
     }
-    editor = window.CodeMirror.fromTextArea(textarea, {
-      mode: "python",
-      theme: "material",
-      lineNumbers: true,
-      indentUnit: 4,
-      tabSize: 4,
-    });
+    editor = window.CodeMirror.fromTextArea(textarea, editorOptions());
     editor.addKeyMap({
+      Tab: () => { insertSoftTab(editor); },
       "Cmd-Enter": () => { triggerPrimaryShortcut(); },
       "Ctrl-Enter": () => { triggerPrimaryShortcut(); },
       "Shift-Enter": () => { triggerSubmit(); },
       "Cmd-/": () => { toggleEditorComment(); },
       "Ctrl-/": () => { toggleEditorComment(); },
     });
+    bindWrappingKeys(editor);
     editor.on("change", () => {
       const question = currentQuestion();
       lastRunPassed = false;
@@ -680,6 +748,7 @@ function isSuccessfulSubmit(payload, mode) {
 async function sendCode(mode) {
   const chapter = window.__CHAPTER_DATA__;
   const question = currentQuestion();
+  normalizeEditorIndentation(editor);
   const response = await fetch(`/api/${mode}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
