@@ -275,8 +275,8 @@
             local: "{{ url_for('static', filename='vendor/codemirror/mode/python/python.min.js') }}",
           },
           {
-            cdn: "{{ url_for('static', filename='app.js') }}",
-            local: "{{ url_for('static', filename='app.js') }}",
+            cdn: "{{ static_url('app.js') }}",
+            local: "{{ static_url('app.js') }}",
           },
         ];
 

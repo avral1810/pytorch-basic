@@ -19,6 +19,16 @@ RUNNER = PersistentRunner()
 app = Flask(__name__, template_folder=str(QUIZ_DIR / "templates"), static_folder=str(QUIZ_DIR / "static"))
 
 
+@app.context_processor
+def static_helpers():
+    def static_url(filename: str) -> str:
+        path = QUIZ_DIR / "static" / filename
+        version = int(path.stat().st_mtime) if path.exists() else 0
+        return f"{app.static_url_path}/{filename}?v={version}"
+
+    return {"static_url": static_url}
+
+
 def timeout_error(message_prefix: str) -> str:
     return f"{message_prefix} timed out after {EXECUTION_TIMEOUT_SECONDS} seconds."
 

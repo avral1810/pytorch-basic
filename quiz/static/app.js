@@ -615,9 +615,12 @@ function getLineIndent(text) {
   return match ? match[0] : "";
 }
 
-function splitBracketPairLine(cm) {
+function immediateBracketPairContext(cm) {
   if (!cm || typeof cm.getCursor !== "function" || typeof cm.getLine !== "function") {
-    return false;
+    return null;
+  }
+  if (typeof cm.somethingSelected === "function" && cm.somethingSelected()) {
+    return null;
   }
 
   const pairs = {
@@ -629,18 +632,51 @@ function splitBracketPairLine(cm) {
   const line = cm.getLine(cursor.line);
   const before = line[cursor.ch - 1];
   const after = line[cursor.ch];
-  if (!before || pairs[before] !== after) {
+  if (!Object.prototype.hasOwnProperty.call(pairs, before) || pairs[before] !== after) {
+    return null;
+  }
+
+  return { cursor, line, before, after };
+}
+
+function splitImmediateBracketPair(cm, context = immediateBracketPairContext(cm)) {
+  if (!context) {
     return false;
   }
 
-  const baseIndent = getLineIndent(line);
+  const baseIndent = getLineIndent(context.line);
   const innerIndent = `${baseIndent}${" ".repeat(4)}`;
   cm.replaceSelection(`\n${innerIndent}\n${baseIndent}`, "around", "+input");
-  cm.setCursor(cursor.line + 1, innerIndent.length);
+  cm.setCursor(context.cursor.line + 1, innerIndent.length);
   return true;
 }
 
-function bindWrappingKeys(cm) {
+function bindEnterKey(cm) {
+  if (!cm || typeof cm.getWrapperElement !== "function") {
+    return;
+  }
+
+  cm.getWrapperElement().addEventListener("keydown", (event) => {
+    if (event.key !== "Enter" || event.shiftKey || event.metaKey || event.ctrlKey || event.altKey) {
+      return;
+    }
+
+    const pairContext = immediateBracketPairContext(cm);
+    if (!pairContext) {
+      return;
+    }
+
+    event.preventDefault();
+    if (typeof event.stopImmediatePropagation === "function") {
+      event.stopImmediatePropagation();
+    } else {
+      event.stopPropagation();
+    }
+    splitImmediateBracketPair(cm, pairContext);
+  }, true);
+}
+
+function bindBracketKeys(cm) {
   if (!cm || typeof cm.on !== "function") {
     return;
   }
@@ -654,11 +690,6 @@ function bindWrappingKeys(cm) {
 
   cm.on("keydown", (_, event) => {
     if (event.metaKey || event.ctrlKey || event.altKey) {
-      return;
-    }
-
-    if (event.key === "Enter" && splitBracketPairLine(cm)) {
-      event.preventDefault();
       return;
     }
 
@@ -679,6 +710,20 @@ function bindWrappingKeys(cm) {
       event.preventDefault();
     }
   });
+}
+
+function installEditorKeys(cm, extraKeys = {}) {
+  if (!cm || typeof cm.addKeyMap !== "function") {
+    return;
+  }
+
+  cm.addKeyMap({
+    Tab: () => { insertSoftTab(cm); },
+    "Shift-Tab": () => { outdentSelection(cm); },
+    ...extraKeys,
+  });
+  bindEnterKey(cm);
+  bindBracketKeys(cm);
 }
 
 function normalizeEditorIndentation(cm) {
@@ -714,23 +759,16 @@ function buildEditor() {
     }
     if (playgroundTextarea) {
       playgroundEditor = window.CodeMirror.fromTextArea(playgroundTextarea, editorOptions());
-      playgroundEditor.addKeyMap({
-        Tab: () => { insertSoftTab(playgroundEditor); },
-        "Shift-Tab": () => { outdentSelection(playgroundEditor); },
-      });
-      bindWrappingKeys(playgroundEditor);
+      installEditorKeys(playgroundEditor);
     }
     editor = window.CodeMirror.fromTextArea(textarea, editorOptions());
-    editor.addKeyMap({
-      Tab: () => { insertSoftTab(editor); },
-      "Shift-Tab": () => { outdentSelection(editor); },
+    installEditorKeys(editor, {
       "Cmd-Enter": () => { triggerPrimaryShortcut(); },
       "Ctrl-Enter": () => { triggerPrimaryShortcut(); },
       "Shift-Enter": () => { triggerSubmit(); },
       "Cmd-/": () => { toggleEditorComment(); },
       "Ctrl-/": () => { toggleEditorComment(); },
     });
-    bindWrappingKeys(editor);
     editor.on("change", () => {
       const question = currentQuestion();
       lastRunPassed = false;
@@ -971,7 +1009,7 @@ function bindQuizUi() {
   });
 }
 
-window.addEventListener("DOMContentLoaded", () => {
+function initializeChapterApp() {
   refreshSavedProgressUi();
   if (!window.__CHAPTER_DATA__) {
     return;
@@ -985,4 +1023,10 @@ window.addEventListener("DOMContentLoaded", () => {
   buildEditor();
   bindQuizUi();
   renderCurrentQuestion(true);
-});
+}
+
+if (document.readyState === "loading") {
+  window.addEventListener("DOMContentLoaded", initializeChapterApp);
+} else {
+  initializeChapterApp();
+}
