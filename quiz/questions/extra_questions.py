@@ -112,16 +112,26 @@ def manual_mlp_loss(logits: torch.Tensor, labels: torch.Tensor) -> torch.Tensor:
         "06",
         "Train A Manual MLP",
         "06_manual_mlp_from_scratch",
-        "Write `train_manual_mlp(seed=42)` that sets the seed, makes XOR-like data, builds the manual `2 -> 16 -> 2` MLP from raw tensors, trains it for multiple epochs with manual gradient updates, and returns the final accuracy as a Python float.",
+        "Write `train_manual_mlp(seed=42)` that trains a manual `2 -> 16 -> 2` MLP on the four XOR rows and returns the final accuracy as a Python float. Use `x = [[0,0], [0,1], [1,0], [1,1]]`, labels `[0, 1, 1, 0]`, initialize `w1` and `w2` with `torch.randn(...) * 0.5`, initialize `b1` and `b2` with zeros, train for 2000 epochs, and use learning rate `0.1`.",
         """import torch
 import torch.nn.functional as F
 
 
 def train_manual_mlp(seed: int = 42) -> float:
-    # Train the manual MLP end to end and return the final accuracy.
+    # Data recipe:
+    # x = torch.tensor([[0, 0], [0, 1], [1, 0], [1, 1]], dtype=torch.float32)
+    # y = torch.tensor([0, 1, 1, 0])
+    #
+    # Parameter recipe:
+    # w1 shape (2, 16), initialized with torch.randn(...) * 0.5
+    # b1 shape (16,), initialized with zeros
+    # w2 shape (16, 2), initialized with torch.randn(...) * 0.5
+    # b2 shape (2,), initialized with zeros
+    #
+    # Train for 2000 epochs with learning_rate = 0.1.
     raise NotImplementedError("Replace this line with your code.")
 """,
-        ["Use `torch.manual_seed(seed)` so the result is deterministic.", "Return the final accuracy as a float, not logits or parameter tensors."],
+        ["Use the four XOR rows and labels `[0, 1, 1, 0]`.", "Initialize weights with `torch.randn(...) * 0.5`, biases with `torch.zeros(...)`, train 2000 epochs with learning rate `0.1`."],
         "quiz.questions.tests.q40_train_manual_mlp",
         symbol_name="train_manual_mlp",
     ),

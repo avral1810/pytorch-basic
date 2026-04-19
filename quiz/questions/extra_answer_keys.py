@@ -45,9 +45,11 @@ import torch.nn.functional as F
 
 def train_manual_mlp(seed: int = 42) -> float:
     torch.manual_seed(seed)
-    x = torch.rand(600, 2) * 2 - 1
-    y = ((x[:, 0] * x[:, 1]) > 0).long()
-    x = x + 0.15 * torch.randn_like(x)
+    x = torch.tensor(
+        [[0, 0], [0, 1], [1, 0], [1, 1]],
+        dtype=torch.float32,
+    )
+    y = torch.tensor([0, 1, 1, 0])
 
     w1 = (torch.randn(2, 16) * 0.5).requires_grad_()
     b1 = torch.zeros(16, requires_grad=True)
@@ -55,14 +57,14 @@ def train_manual_mlp(seed: int = 42) -> float:
     b2 = torch.zeros(2, requires_grad=True)
     params = [w1, b1, w2, b2]
 
-    for _ in range(120):
+    for _ in range(2000):
         hidden = torch.relu(x @ w1 + b1)
         logits = hidden @ w2 + b2
         loss = F.cross_entropy(logits, y)
         loss.backward()
         with torch.no_grad():
             for param in params:
-                param -= 0.05 * param.grad
+                param -= 0.1 * param.grad
         for param in params:
             param.grad.zero_()
 

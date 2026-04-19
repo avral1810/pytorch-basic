@@ -542,22 +542,72 @@ function insertSoftTab(cm) {
   cm.replaceSelection(" ".repeat(4), "end", "+input");
 }
 
+function outdentSelection(cm) {
+  if (!cm || typeof cm.listSelections !== "function" || typeof cm.getLine !== "function") {
+    return;
+  }
+
+  const targetLines = new Set();
+  cm.listSelections().forEach((selection) => {
+    const from = selection.from();
+    const to = selection.to();
+    const endLine = to.ch === 0 && to.line > from.line ? to.line - 1 : to.line;
+    for (let line = from.line; line <= endLine; line += 1) {
+      targetLines.add(line);
+    }
+  });
+
+  cm.operation(() => {
+    Array.from(targetLines).sort((a, b) => a - b).forEach((line) => {
+      const text = cm.getLine(line);
+      const match = text.match(/^(\t| {1,4})/);
+      if (match) {
+        cm.replaceRange("", { line, ch: 0 }, { line, ch: match[0].length }, "+input");
+      }
+    });
+  });
+}
+
 function wrapSelections(cm, openChar, closeChar) {
   if (!cm || typeof cm.listSelections !== "function") {
-    return;
+    return false;
   }
 
   const selections = cm.listSelections();
   const hasSelectedText = selections.some((selection) => !selection.empty());
   if (!hasSelectedText) {
-    const cursor = cm.getCursor();
-    cm.replaceSelection(`${openChar}${closeChar}`, "around", "+input");
-    cm.setCursor(cursor.line, cursor.ch + 1);
-    return;
+    return false;
   }
 
   const replacements = cm.getSelections().map((selection) => `${openChar}${selection}${closeChar}`);
   cm.replaceSelections(replacements, "around", "+input");
+  return true;
+}
+
+function insertBracketPair(cm, openChar, closeChar) {
+  if (!cm || typeof cm.getCursor !== "function" || typeof cm.replaceSelection !== "function") {
+    return false;
+  }
+
+  const cursor = cm.getCursor();
+  cm.replaceSelection(`${openChar}${closeChar}`, "around", "+input");
+  cm.setCursor(cursor.line, cursor.ch + 1);
+  return true;
+}
+
+function skipExistingCloseBracket(cm, closeChar) {
+  if (!cm || typeof cm.getCursor !== "function" || typeof cm.getRange !== "function") {
+    return false;
+  }
+
+  const cursor = cm.getCursor();
+  const next = { line: cursor.line, ch: cursor.ch + 1 };
+  if (cm.getRange(cursor, next) !== closeChar) {
+    return false;
+  }
+
+  cm.setCursor(next);
+  return true;
 }
 
 function bindWrappingKeys(cm) {
@@ -570,17 +620,29 @@ function bindWrappingKeys(cm) {
     "[": "]",
     "{": "}",
   };
+  const closingChars = new Set(Object.values(pairs));
 
   cm.on("keydown", (_, event) => {
     if (event.metaKey || event.ctrlKey || event.altKey) {
       return;
     }
+
+    if (closingChars.has(event.key) && skipExistingCloseBracket(cm, event.key)) {
+      event.preventDefault();
+      return;
+    }
+
     const closeChar = pairs[event.key];
     if (!closeChar) {
       return;
     }
-    event.preventDefault();
-    wrapSelections(cm, event.key, closeChar);
+    if (wrapSelections(cm, event.key, closeChar)) {
+      event.preventDefault();
+      return;
+    }
+    if (insertBracketPair(cm, event.key, closeChar)) {
+      event.preventDefault();
+    }
   });
 }
 
@@ -619,12 +681,14 @@ function buildEditor() {
       playgroundEditor = window.CodeMirror.fromTextArea(playgroundTextarea, editorOptions());
       playgroundEditor.addKeyMap({
         Tab: () => { insertSoftTab(playgroundEditor); },
+        "Shift-Tab": () => { outdentSelection(playgroundEditor); },
       });
       bindWrappingKeys(playgroundEditor);
     }
     editor = window.CodeMirror.fromTextArea(textarea, editorOptions());
     editor.addKeyMap({
       Tab: () => { insertSoftTab(editor); },
+      "Shift-Tab": () => { outdentSelection(editor); },
       "Cmd-Enter": () => { triggerPrimaryShortcut(); },
       "Ctrl-Enter": () => { triggerPrimaryShortcut(); },
       "Shift-Enter": () => { triggerSubmit(); },

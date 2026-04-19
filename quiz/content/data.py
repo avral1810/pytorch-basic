@@ -1161,6 +1161,88 @@ for chapter_id, extra_sections in EXTRA_CHAPTER_SECTIONS.items():
     insert_sections_before_recap(chapter_id, extra_sections)
 
 
+ADVANCED_THEORY_SECTIONS = {
+    "08": [
+        {"type": "paragraph", "content": "At a deeper level, a CNN works because it builds a hierarchy of local evidence. Early filters respond to simple local patterns, later filters combine earlier feature maps into more abstract patterns, and the classifier head uses those abstract maps to choose a class."},
+        {"type": "math", "title": "Translation Equivariance", "content": "If a pattern shifts in the input,\na convolution shifts its response in the output.\n\nThis is called translation equivariance."},
+        {"type": "paragraph", "content": "Translation equivariance is one reason convolution is powerful for images. A vertical edge detector does not need separate weights for the left side, center, and right side of an image. The same filter can detect that edge wherever it appears."},
+        {"type": "math", "title": "Receptive Field Growth", "content": "Stacked local operations increase effective context.\n\nOne 3x3 conv sees a 3x3 patch.\nTwo stacked 3x3 convs can combine information from a larger region."},
+        {"type": "paragraph", "content": "This receptive-field growth explains why CNNs stack layers instead of using one giant filter at the beginning. Stacking small filters is parameter-efficient and lets the model build features gradually from local to more global evidence."},
+        {"type": "callout", "title": "Performance intuition", "content": "CNNs perform well on images because they bake in three useful assumptions: nearby pixels are related, the same pattern can appear in many places, and spatial structure should be preserved for several layers before classification."},
+    ],
+    "09": [
+        {"type": "paragraph", "content": "A vision classifier is not just a CNN architecture; it is a full pipeline. The model performance depends on image generation or loading, tensor shape, normalization, batching, training mode, evaluation mode, and the final metric."},
+        {"type": "math", "title": "Image Pipeline Contract", "content": "raw image -> tensor (C, H, W)\nbatch -> (N, C, H, W)\nCNN -> logits (N, classes)\nargmax -> predicted class ids"},
+        {"type": "paragraph", "content": "The synthetic pattern dataset in this chapter is deliberately simple so you can isolate the vision pipeline. Real datasets add more visual variation, but the computational contract is the same: transform images into tensors, feed batches into a CNN, and optimize class logits."},
+        {"type": "math", "title": "Normalization Idea", "content": "normalized_pixel = (pixel - mean) / std"},
+        {"type": "paragraph", "content": "Normalization helps training because it keeps input values on a stable scale. In real `torchvision` workflows, transforms such as `Normalize(mean, std)` prevent the first layer from having to adapt to arbitrary pixel ranges."},
+        {"type": "callout", "title": "Performance intuition", "content": "Vision models improve when the data pipeline is consistent. A strong CNN can still perform poorly if image shapes, channel order, labels, or normalization are wrong."},
+    ],
+    "10": [
+        {"type": "paragraph", "content": "An LSTM is a recurrent model designed to preserve useful information longer than a vanilla RNN. It does this by separating short-term hidden output from a more protected cell-state memory path."},
+        {"type": "math", "title": "LSTM State Pair", "content": "hidden state h_t: exposed summary used for output\ncell state c_t: internal memory path carried through time"},
+        {"type": "paragraph", "content": "The cell state is the main conceptual upgrade. Instead of forcing all memory through one tanh-hidden update, the LSTM uses gates to decide what to forget, what to write, and what to reveal."},
+        {"type": "math", "title": "Gate Intuition", "content": "forget gate: how much old memory to keep\ninput gate: how much new information to write\noutput gate: how much memory to expose as h_t"},
+        {"type": "paragraph", "content": "These gates are learned functions of the current input and previous hidden state. They produce values between 0 and 1, so they act like soft switches rather than hard if-statements."},
+        {"type": "callout", "title": "Performance intuition", "content": "LSTMs often outperform vanilla RNNs on longer sequences because the gated cell state gives gradients and information a cleaner path across many time steps."},
+    ],
+    "11": [
+        {"type": "paragraph", "content": "A Transformer performs sequence modeling by replacing step-by-step recurrence with direct token-to-token interaction. Instead of compressing the past into one hidden state, every token can compute attention over every other token in the same layer."},
+        {"type": "math", "title": "Attention Complexity", "content": "For sequence length L,\nattention scores have shape L x L.\n\nThat means each layer compares every token to every token."},
+        {"type": "paragraph", "content": "This all-to-all comparison is expensive for long sequences, but it is also powerful. It lets the model connect distant positions directly instead of passing information through many recurrent steps."},
+        {"type": "math", "title": "Scaled Dot-Product Attention", "content": "Attention(Q, K, V) = softmax(QK^T / sqrt(d_k)) V"},
+        {"type": "paragraph", "content": "The scaling by `sqrt(d_k)` keeps dot products from growing too large as the feature dimension increases. Without scaling, softmax can become overly sharp early in training, which makes gradients less useful."},
+        {"type": "callout", "title": "Performance intuition", "content": "Transformers perform well on sequence tasks because attention gives them flexible, content-dependent routing: each token can decide which other tokens matter for the current layer."},
+    ],
+    "12": [
+        {"type": "paragraph", "content": "A GAN is best understood as a two-player optimization problem. The discriminator learns to distinguish real from fake samples, while the generator learns to produce samples that the discriminator classifies as real."},
+        {"type": "math", "title": "Adversarial Objective Intuition", "content": "Discriminator: maximize correct real/fake decisions\nGenerator: maximize discriminator mistakes on fake samples"},
+        {"type": "paragraph", "content": "This adversarial setup makes GAN training very different from ordinary supervised learning. There is no fixed target output for the generator. Its learning signal comes from the discriminator's changing judgment."},
+        {"type": "math", "title": "Detach During D Step", "content": "D step: fake = G(z).detach()\nG step: fake = G(z)\n\nDetach prevents generator gradients during discriminator training."},
+        {"type": "paragraph", "content": "The detach rule is central. When training the discriminator, fake samples are treated as data examples. When training the generator, fake samples must remain connected to generator parameters so gradients can improve the generator."},
+        {"type": "callout", "title": "Performance intuition", "content": "GANs can produce sharp samples because the generator learns from a discriminator that judges realism, but training can be unstable because both networks keep changing the learning problem for each other."},
+    ],
+    "14": [
+        {"type": "paragraph", "content": "A vanilla RNN performs sequence computation by repeatedly applying the same transition function. The same parameters are reused at every time step, which lets the model process variable-length sequences with one learned update rule."},
+        {"type": "math", "title": "Parameter Sharing Through Time", "content": "h_t = tanh(W_x x_t + W_h h_{t-1} + b)\n\nThe same W_x, W_h, and b are reused for every t."},
+        {"type": "paragraph", "content": "This parameter sharing is efficient and gives RNNs their sequence-processing identity. But it also means every time step must pass information through the same bottleneck hidden state."},
+        {"type": "math", "title": "Backpropagation Through Time", "content": "loss at the end sends gradients backward through\nh_T -> h_{T-1} -> h_{T-2} -> ... -> h_1"},
+        {"type": "paragraph", "content": "Backpropagation through time explains both the strength and weakness of RNNs. The model can learn from sequence order, but long chains of repeated transformations can make gradients vanish or explode."},
+        {"type": "callout", "title": "Performance intuition", "content": "Vanilla RNNs are useful for teaching and short dependencies, but they often struggle when the task requires remembering precise information from far back in the sequence."},
+    ],
+    "15": [
+        {"type": "paragraph", "content": "A manual CNN exposes the exact computation hidden behind `nn.Conv2d`. This matters because performance problems in CNNs are often shape, channel, stride, or flatten-size problems rather than mysterious training failures."},
+        {"type": "math", "title": "Convolution As Shared Linear Layer", "content": "At each spatial location:\npatch -> dot product with filter -> one output value\n\nThe same filter weights are reused at all locations."},
+        {"type": "paragraph", "content": "That shared-linear-layer view connects CNNs back to earlier chapters. A convolution is still a learned affine operation, but it is constrained to local patches and reused across space."},
+        {"type": "math", "title": "Why Sharing Reduces Parameters", "content": "One 3x3 filter over 1 channel has 9 weights.\nIt can be applied to hundreds of spatial locations\nwithout creating new weights for each location."},
+        {"type": "paragraph", "content": "This is the parameter-efficiency advantage. A fully connected layer over raw pixels would need separate weights for every pixel-to-hidden connection. A convolution learns a small reusable pattern detector."},
+        {"type": "callout", "title": "Performance intuition", "content": "Manual CNNs clarify why convolutional models can train well with fewer parameters than image MLPs: locality and weight sharing match the structure of image data."},
+    ],
+    "16": [
+        {"type": "paragraph", "content": "A manual RNN makes the hidden-state bottleneck explicit. At every time step, the model must decide how to combine the new token vector with the current summary of everything seen so far."},
+        {"type": "math", "title": "Hidden State As Compression", "content": "sequence prefix x_1...x_t -> h_t\n\nh_t is a fixed-width summary no matter how long the prefix is."},
+        {"type": "paragraph", "content": "This fixed-width summary is both useful and limiting. It lets the model process sequences of different lengths, but it can also force the model to compress too much information into one vector."},
+        {"type": "math", "title": "Gradient Chain Problem", "content": "∂L/∂h_1 includes repeated products through W_h\n\nRepeated products can shrink or grow quickly."},
+        {"type": "paragraph", "content": "That is the mathematical root of vanishing and exploding gradients in vanilla RNNs. The same recurrent matrix participates many times in the gradient path."},
+        {"type": "callout", "title": "Performance intuition", "content": "Manual RNNs are strong for understanding recurrence, but LSTMs and attention-based models were invented because a single repeated hidden update is often not enough for long-range structure."},
+    ],
+    "17": [
+        {"type": "paragraph", "content": "The manual Transformer chapter is where sequence modeling shifts from memory-over-time to routing-over-positions. Attention creates a learned communication pattern between tokens inside each layer."},
+        {"type": "math", "title": "Attention As Routing", "content": "attention weights[i, j]\n= how much token i reads from token j"},
+        {"type": "paragraph", "content": "This routing view is more concrete than saying attention 'focuses'. Each row of the attention matrix is a distribution over source positions. The output for a token is a weighted mixture of value vectors from those positions."},
+        {"type": "math", "title": "Why Positional Encoding Is Needed", "content": "Self-attention sees sets of token vectors.\nWithout position information,\norder is not naturally represented."},
+        {"type": "paragraph", "content": "Positional encoding injects order information so the model can distinguish the same tokens appearing in different positions. Attention handles relationships, but positions must be provided or learned separately."},
+        {"type": "math", "title": "Residual Block Idea", "content": "x_next = x + sublayer(x)\n\nResidual paths help information and gradients flow across depth."},
+        {"type": "paragraph", "content": "Even if the manual lesson is simplified, real Transformer blocks rely heavily on residual connections and normalization. Those components make deep stacks trainable by preserving a direct path for information across layers."},
+        {"type": "callout", "title": "Performance intuition", "content": "Transformers perform well because they combine direct token-to-token routing, parallel computation across positions, multi-head feature subspaces, and deep residual feature transformation."},
+    ],
+}
+
+
+for chapter_id, extra_sections in ADVANCED_THEORY_SECTIONS.items():
+    insert_sections_before_recap(chapter_id, extra_sections)
+
+
 def normalize_section(section: dict[str, object], index: int, recap_assigned: bool) -> tuple[dict[str, object], bool]:
     normalized = deepcopy(section)
     normalized["anchor"] = f"section-{index}"
