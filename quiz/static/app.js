@@ -610,6 +610,36 @@ function skipExistingCloseBracket(cm, closeChar) {
   return true;
 }
 
+function getLineIndent(text) {
+  const match = text.match(/^\s*/);
+  return match ? match[0] : "";
+}
+
+function splitBracketPairLine(cm) {
+  if (!cm || typeof cm.getCursor !== "function" || typeof cm.getLine !== "function") {
+    return false;
+  }
+
+  const pairs = {
+    "(": ")",
+    "[": "]",
+    "{": "}",
+  };
+  const cursor = cm.getCursor();
+  const line = cm.getLine(cursor.line);
+  const before = line[cursor.ch - 1];
+  const after = line[cursor.ch];
+  if (!before || pairs[before] !== after) {
+    return false;
+  }
+
+  const baseIndent = getLineIndent(line);
+  const innerIndent = `${baseIndent}${" ".repeat(4)}`;
+  cm.replaceSelection(`\n${innerIndent}\n${baseIndent}`, "around", "+input");
+  cm.setCursor(cursor.line + 1, innerIndent.length);
+  return true;
+}
+
 function bindWrappingKeys(cm) {
   if (!cm || typeof cm.on !== "function") {
     return;
@@ -624,6 +654,11 @@ function bindWrappingKeys(cm) {
 
   cm.on("keydown", (_, event) => {
     if (event.metaKey || event.ctrlKey || event.altKey) {
+      return;
+    }
+
+    if (event.key === "Enter" && splitBracketPairLine(cm)) {
+      event.preventDefault();
       return;
     }
 

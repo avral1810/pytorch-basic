@@ -5,8 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Chapter {{ chapter.number }} - {{ chapter.title }}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/material.min.css">
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css"
+      onerror="this.onerror=null;this.href='{{ url_for('static', filename='vendor/codemirror/codemirror.min.css') }}';"
+    >
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/material.min.css"
+      onerror="this.onerror=null;this.href='{{ url_for('static', filename='vendor/codemirror/theme/material.min.css') }}';"
+    >
   </head>
   <body class="chapter-site">
     <div class="chapter-shell">
@@ -251,9 +259,50 @@
     </aside>
 
     <script>window.__CHAPTER_DATA__ = {{ chapter|tojson }};</script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/comment/comment.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/python/python.min.js"></script>
-    <script src="{{ url_for('static', filename='app.js') }}"></script>
+    <script>
+      (function loadEditorScripts() {
+        const assets = [
+          {
+            cdn: "https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js",
+            local: "{{ url_for('static', filename='vendor/codemirror/codemirror.min.js') }}",
+          },
+          {
+            cdn: "https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/comment/comment.min.js",
+            local: "{{ url_for('static', filename='vendor/codemirror/addon/comment/comment.min.js') }}",
+          },
+          {
+            cdn: "https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/python/python.min.js",
+            local: "{{ url_for('static', filename='vendor/codemirror/mode/python/python.min.js') }}",
+          },
+          {
+            cdn: "{{ url_for('static', filename='app.js') }}",
+            local: "{{ url_for('static', filename='app.js') }}",
+          },
+        ];
+
+        function loadScriptPair(asset) {
+          return new Promise((resolve, reject) => {
+            const script = document.createElement("script");
+            script.src = asset.cdn;
+            script.onload = resolve;
+            script.onerror = () => {
+              const fallback = document.createElement("script");
+              fallback.src = asset.local;
+              fallback.onload = resolve;
+              fallback.onerror = reject;
+              document.body.appendChild(fallback);
+            };
+            document.body.appendChild(script);
+          });
+        }
+
+        assets.reduce(
+          (chain, asset) => chain.then(() => loadScriptPair(asset)),
+          Promise.resolve(),
+        ).catch((error) => {
+          console.error("Unable to load editor scripts.", error);
+        });
+      })();
+    </script>
   </body>
 </html>
