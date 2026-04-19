@@ -27,6 +27,7 @@ function getChapterProgress(chapterId, questionCount = 0) {
   const answers = progress.answers && typeof progress.answers === "object" ? progress.answers : {};
   const hintCounts = progress.hint_counts && typeof progress.hint_counts === "object" ? progress.hint_counts : {};
   const currentQuestionIndex = Number.isInteger(progress.current_question_index) ? progress.current_question_index : 0;
+  const lessonCollapsed = Boolean(progress.lesson_collapsed);
   const completed = Boolean(progress.completed) || (questionCount > 0 && completedQuestions.length >= questionCount);
   return {
     completed,
@@ -34,6 +35,7 @@ function getChapterProgress(chapterId, questionCount = 0) {
     answers,
     hint_counts: hintCounts,
     current_question_index: currentQuestionIndex,
+    lesson_collapsed: lessonCollapsed,
   };
 }
 
@@ -427,6 +429,40 @@ function closeTutorialDrawer() {
 
   drawer.classList.remove("open");
   drawer.setAttribute("aria-hidden", "true");
+}
+
+function setLessonCollapsed(collapsed, persist = false) {
+  const panel = document.querySelector(".lesson-panel");
+  const content = document.getElementById("lesson-content");
+  const button = document.getElementById("lesson-collapse-toggle");
+  if (!panel || !content || !button) {
+    return;
+  }
+
+  panel.classList.toggle("is-collapsed", collapsed);
+  content.hidden = collapsed;
+  button.textContent = collapsed ? "Show Lesson" : "Collapse Lesson";
+  button.setAttribute("aria-expanded", collapsed ? "false" : "true");
+
+  if (persist && window.__CHAPTER_DATA__) {
+    updateChapterProgress(window.__CHAPTER_DATA__.id, (progress) => ({
+      ...progress,
+      lesson_collapsed: collapsed,
+    }), questions.length);
+  }
+}
+
+function restoreLessonCollapseState() {
+  if (!window.__CHAPTER_DATA__) {
+    return;
+  }
+  const progress = getChapterProgress(window.__CHAPTER_DATA__.id, questions.length);
+  setLessonCollapsed(Boolean(progress.lesson_collapsed));
+}
+
+function toggleLessonCollapse() {
+  const panel = document.querySelector(".lesson-panel");
+  setLessonCollapsed(!(panel && panel.classList.contains("is-collapsed")), true);
 }
 
 function currentQuestion() {
@@ -956,6 +992,7 @@ function bindQuizUi() {
     "next-question": goToNextQuestion,
     "open-tutorial-drawer": openTutorialDrawer,
     "open-pdf-drawer": (event) => openPdfDrawer(event.currentTarget.dataset.pdfUrl),
+    "toggle-lesson-collapse": toggleLessonCollapse,
     "run-playground": runPlayground,
     "show-answer": revealAnswer,
     "reset-playground": () => {
@@ -1020,6 +1057,7 @@ function initializeChapterApp() {
   if (questions.length > 0) {
     currentIndex = Math.min(Math.max(savedProgress.current_question_index || 0, 0), questions.length - 1);
   }
+  restoreLessonCollapseState();
   buildEditor();
   bindQuizUi();
   renderCurrentQuestion(true);

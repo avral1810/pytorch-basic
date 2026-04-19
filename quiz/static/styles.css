@@ -55,6 +55,9 @@ body { margin: 0; font-family: "Iowan Old Style", "Palatino Linotype", serif; ba
 .chapter-main { display: grid; gap: 18px; padding: 24px; }
 .lesson-panel, .quiz-panel { padding: 22px; }
 .lesson-top, .quiz-header { display: flex; justify-content: space-between; gap: 18px; align-items: flex-start; }
+.lesson-content { display: block; }
+.lesson-panel.is-collapsed .lesson-content { display: none; }
+.lesson-panel.is-collapsed { padding-bottom: 18px; }
 .question-progress { margin: 6px 0 4px; color: var(--muted); font-weight: 700; font-size: 0.95rem; }
 .question-tracker { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 10px; margin-top: 16px; }
 .question-tracker-item { display: flex; flex-direction: column; gap: 4px; text-align: left; padding: 10px 12px; border-radius: 14px; border: 1px solid var(--line); background: #fcf8ef; color: var(--ink); cursor: pointer; }

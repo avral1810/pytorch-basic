@@ -211,17 +211,31 @@ def run_mlp_training_epoch(model, loader, optimizer) -> float:
         "07",
         "Train A Module MLP",
         "07_basic_nn_mlp_with_nn_module",
-        "Write `train_module_mlp(seed=42)` that sets the seed, makes XOR-like data, builds the `nn.Module` MLP, trains it for multiple epochs, and returns the final validation accuracy as a Python float.",
+        "Write `train_module_mlp(seed=42)` that sets the seed, uses the exact XOR-like data recipe shown in the starter, builds the `nn.Module` MLP, trains it for multiple epochs, and returns the final validation accuracy as a Python float.",
         """import torch
 from torch import nn
 from torch.utils.data import DataLoader, TensorDataset
 
 
 def train_module_mlp(seed: int = 42) -> float:
+    # Use this exact data recipe so your output is deterministic:
+    # torch.manual_seed(seed)
+    # x = torch.rand(800, 2) * 2 - 1
+    # y = ((x[:, 0] * x[:, 1]) > 0).long()
+    # x = x + 0.15 * torch.randn_like(x)
+    # split = 640
+    # loader = DataLoader(TensorDataset(x[:split], y[:split]), batch_size=64, shuffle=True)
+    # val_x = x[split:]
+    # val_y = y[split:]
+    #
     # Train the module-based MLP end to end and return the validation accuracy.
     raise NotImplementedError("Replace this line with your code.")
 """,
-        ["Use `torch.manual_seed(seed)` so repeated runs match.", "Return the final validation accuracy as a float."],
+        [
+            "Use the exact data recipe in the starter comments, including `split = 640` and `batch_size=64`.",
+            "Use `torch.manual_seed(seed)` so repeated runs match.",
+            "Return the final validation accuracy as a float.",
+        ],
         "quiz.questions.tests.q45_train_module_mlp",
         symbol_name="train_module_mlp",
     ),

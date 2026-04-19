@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Chapter {{ chapter.number }} - {{ chapter.title }}</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="stylesheet" href="{{ static_url('styles.css') }}">
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css"
@@ -69,6 +69,14 @@
               <h2>Lesson Page</h2>
             </div>
             <div class="resource-links">
+              <button
+                id="lesson-collapse-toggle"
+                class="resource-button"
+                type="button"
+                data-action="toggle-lesson-collapse"
+                aria-expanded="true"
+                aria-controls="lesson-content"
+              >Collapse Lesson</button>
               {% for button in chapter.ui.resource_buttons %}
               <button
                 id="{{ button.id }}"
@@ -81,50 +89,52 @@
             </div>
           </div>
 
-          <img src="{{ url_for('chapter_assets', filename=chapter.image) }}" alt="{{ chapter.title }}" class="chapter-hero-image">
+          <div id="lesson-content" class="lesson-content">
+            <img src="{{ url_for('chapter_assets', filename=chapter.image) }}" alt="{{ chapter.title }}" class="chapter-hero-image">
 
-          {% for section in chapter.sections %}
-            {% if section["type"] == "paragraph" %}
-            <p class="lesson-paragraph">{{ section["content"] }}</p>
-            {% elif section["type"] == "list" %}
-            <section class="lesson-section" id="{{ section.anchor }}"><h3>{{ section["title"] }}</h3><ul>{% for item in section["items"] %}<li>{{ item }}</li>{% endfor %}</ul></section>
-            {% elif section["type"] == "code" %}
-            <section class="lesson-section" id="{{ section.anchor }}"><h3>{{ section["title"] }}</h3><pre class="lesson-code">{{ section["content"] }}</pre></section>
-            {% elif section["type"] == "math" %}
-            <section class="lesson-section" id="{{ section.anchor }}"><h3>{{ section["title"] }}</h3><pre class="lesson-math">{{ section["content"] }}</pre></section>
-            {% elif section["type"] == "graph" %}
-            <section class="lesson-section" id="{{ section.anchor }}">
-              <h3>{{ section["title"] }}</h3>
-              <div class="lesson-graph">
-                <div class="lesson-graph-branches">
-                  {% for branch in section["branches"] %}
-                  <div class="lesson-graph-branch">
-                    {% for node in branch %}
-                    <div class="lesson-graph-node">{{ node }}</div>
+            {% for section in chapter.sections %}
+              {% if section["type"] == "paragraph" %}
+              <p class="lesson-paragraph">{{ section["content"] }}</p>
+              {% elif section["type"] == "list" %}
+              <section class="lesson-section" id="{{ section.anchor }}"><h3>{{ section["title"] }}</h3><ul>{% for item in section["items"] %}<li>{{ item }}</li>{% endfor %}</ul></section>
+              {% elif section["type"] == "code" %}
+              <section class="lesson-section" id="{{ section.anchor }}"><h3>{{ section["title"] }}</h3><pre class="lesson-code">{{ section["content"] }}</pre></section>
+              {% elif section["type"] == "math" %}
+              <section class="lesson-section" id="{{ section.anchor }}"><h3>{{ section["title"] }}</h3><pre class="lesson-math">{{ section["content"] }}</pre></section>
+              {% elif section["type"] == "graph" %}
+              <section class="lesson-section" id="{{ section.anchor }}">
+                <h3>{{ section["title"] }}</h3>
+                <div class="lesson-graph">
+                  <div class="lesson-graph-branches">
+                    {% for branch in section["branches"] %}
+                    <div class="lesson-graph-branch">
+                      {% for node in branch %}
+                      <div class="lesson-graph-node">{{ node }}</div>
+                      {% if not loop.last %}
+                      <div class="lesson-graph-arrow">→</div>
+                      {% endif %}
+                      {% endfor %}
+                    </div>
+                    {% endfor %}
+                  </div>
+                  <div class="lesson-graph-merge">
+                    <div class="lesson-graph-merge-label">{{ section["merge_label"] }}</div>
+                  </div>
+                  <div class="lesson-graph-chain">
+                    {% for node in section["result_chain"] %}
+                    <div class="lesson-graph-node lesson-graph-node-accent">{{ node }}</div>
                     {% if not loop.last %}
                     <div class="lesson-graph-arrow">→</div>
                     {% endif %}
                     {% endfor %}
                   </div>
-                  {% endfor %}
                 </div>
-                <div class="lesson-graph-merge">
-                  <div class="lesson-graph-merge-label">{{ section["merge_label"] }}</div>
-                </div>
-                <div class="lesson-graph-chain">
-                  {% for node in section["result_chain"] %}
-                  <div class="lesson-graph-node lesson-graph-node-accent">{{ node }}</div>
-                  {% if not loop.last %}
-                  <div class="lesson-graph-arrow">→</div>
-                  {% endif %}
-                  {% endfor %}
-                </div>
-              </div>
-            </section>
-            {% elif section["type"] == "callout" %}
-            <section class="lesson-callout" id="{{ section.anchor }}"><h3>{{ section["title"] }}</h3><p>{{ section["content"] }}</p></section>
-            {% endif %}
-          {% endfor %}
+              </section>
+              {% elif section["type"] == "callout" %}
+              <section class="lesson-callout" id="{{ section.anchor }}"><h3>{{ section["title"] }}</h3><p>{{ section["content"] }}</p></section>
+              {% endif %}
+            {% endfor %}
+          </div>
         </section>
 
         <section class="quiz-panel" id="quiz-app">
